@@ -117,7 +117,10 @@ def set_milestone(pr, repo):
             issue = repo.get_issue(pr_number)
             issue.edit(milestone=target_milestone.number)
     except Exception as e:
+        import traceback
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
+        traceback.print_exc()
+        
 
 def sync_labels(pr, repo):
     current_labels = {label.name for label in pr.get_labels()}
