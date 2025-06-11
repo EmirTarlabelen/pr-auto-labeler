@@ -70,11 +70,9 @@ def extract_issue_keys(base_branch):
     EXPECTED_LABELS.update(issue_keys)
 
 def set_milestone(pr, repo):
-    """Hedef branch'a göre milestone set eder"""
     base_branch = pr.base.ref
     milestone_name = None
 
-    # Branch pattern'lerine göre milestone belirleme
     if base_branch.startswith("development"):
         milestone_name = "sprint-dev"
     elif base_branch.startswith("feature/marketplace"):
@@ -90,7 +88,6 @@ def set_milestone(pr, repo):
 
     print(f"🎯 Target milestone: {milestone_name}")
 
-    # Mevcut milestone'ları kontrol et
     milestones = list(repo.get_milestones(state="all"))
     target_milestone = None
 
@@ -99,7 +96,6 @@ def set_milestone(pr, repo):
             target_milestone = milestone
             break
 
-    # Milestone yoksa oluştur
     if not target_milestone:
         try:
             print(f"🆕 Creating new milestone: {milestone_name}")
@@ -108,14 +104,13 @@ def set_milestone(pr, repo):
             print(f"❌ Failed to create milestone {milestone_name}: {e}")
             return
 
-    # PR'a milestone ata
     try:
         if pr.milestone and pr.milestone.title == milestone_name:
             print(f"ℹ️ Milestone {milestone_name} already set")
         else:
             print(f"📌 Setting milestone: {milestone_name}")
-            issue = repo.get_issue(pr_number)
-            issue.edit(milestone=target_milestone)
+            issue = repo.get_issue(pr.number)
+            issue.edit(milestone=target_milestone)  # ← doğru satır
     except Exception as e:
         import traceback
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
