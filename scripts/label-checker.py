@@ -71,7 +71,7 @@ def extract_issue_keys(base_branch):
 
 def set_milestone(pr, repo):
     """Hedef branch'a göre milestone set eder"""
-    base_branch = pr.base.ref
+    base_branch = pr.head.ref
     milestone_name = None
     
     # Branch pattern'lerine göre milestone belirleme
