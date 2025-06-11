@@ -104,16 +104,57 @@ def set_milestone(pr, repo):
             print(f"❌ Failed to create milestone {milestone_name}: {e}")
             return
 
+    # Debug bilgileri
+    print(f"🔍 Milestone object type: {type(target_milestone)}")
+    print(f"🔍 Milestone details: {target_milestone.title} (ID: {target_milestone.number})")
+    
     try:
         if pr.milestone and pr.milestone.title == milestone_name:
             print(f"ℹ️ Milestone {milestone_name} already set")
         else:
             print(f"📌 Setting milestone: {milestone_name}")
-            issue = repo.get_issue(pr.number)
-            issue.edit(milestone=target_milestone) 
+            
+            # Yöntem 1: Direct PR edit
+            try:
+                print("🔄 Trying direct PR edit...")
+                pr.edit(milestone=target_milestone)
+                print("✅ Milestone set via PR edit")
+                return
+            except Exception as e1:
+                print(f"⚠️ PR edit failed: {e1}")
+                
+            # Yöntem 2: Issue edit with milestone object
+            try:
+                print("🔄 Trying Issue edit with milestone object...")
+                issue = repo.get_issue(pr.number)
+                issue.edit(milestone=target_milestone)
+                print("✅ Milestone set via Issue edit")
+                return
+            except Exception as e2:
+                print(f"⚠️ Issue edit with object failed: {e2}")
+                
+            # Yöntem 3: GitHub REST API call
+            try:
+                print("🔄 Trying GitHub REST API...")
+                import requests
+                headers = {
+                    'Authorization': f'token {token}',
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+                url = f"https://api.github.com/repos/{repo_name}/issues/{pr_number}"
+                data = {'milestone': target_milestone.number}
+                response = requests.patch(url, json=data, headers=headers)
+                if response.status_code == 200:
+                    print("✅ Milestone set via REST API")
+                    return
+                else:
+                    print(f"⚠️ REST API failed: {response.status_code} - {response.text}")
+            except Exception as e3:
+                print(f"⚠️ REST API call failed: {e3}")
+                
     except Exception as e:
         import traceback
-        print(f"❌ Failed to set milestone {milestone_name}: {e}")
+        print(f"❌ All methods failed to set milestone {milestone_name}: {e}")
         traceback.print_exc()
 
 def sync_labels(pr, repo):
