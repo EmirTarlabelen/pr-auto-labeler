@@ -110,7 +110,7 @@ def set_milestone(pr, repo):
         else:
             print(f"📌 Setting milestone: {milestone_name}")
             issue = repo.get_issue(pr.number)
-            issue.edit(milestone=target_milestone)  # ← doğru satır
+            issue.edit(milestone=target_milestone) 
     except Exception as e:
         import traceback
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
