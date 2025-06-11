@@ -110,7 +110,7 @@ def set_milestone(pr, repo):
         else:
             print(f"📌 Setting milestone: {milestone_name}")
             issue = repo.get_issue(pr.number)
-            issue.edit(milestone=target_milestone)  # ✅ Sadece burası değişti
+            issue.edit(milestone=target_milestone)  
     except Exception as e:
         import traceback
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
@@ -161,6 +161,16 @@ def main():
     base_branch = pr.base.ref
 
     print(f"📌 PR#{pr_number} is targeting base branch: {base_branch}")
+    
+    ALLOWED_BASES = [
+        "development",
+        "feature/marketplace",
+        "release/upgrade",
+        "offline_kasa"
+    ]
+    if not any(base_branch.startswith(prefix) for prefix in ALLOWED_BASES):
+        print(f"⛔ Base branch '{base_branch}' is not allowed for labeling or milestone. Skipping all actions.")
+        return
 
     files = get_changed_files(base_branch)
     check_label_conditions(files)
