@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
 import os
 import subprocess
 import re
 from github import Github
-import requests
 
 token = os.environ["GITHUB_TOKEN"]
 repo_name = os.environ["REPO_NAME"]
@@ -71,30 +69,7 @@ def extract_issue_keys(base_branch):
 
     EXPECTED_LABELS.update(issue_keys)
 
-def set_milestone_via_api(milestone_number):
-    """GitHub REST API kullanarak milestone set et"""
-    try:
-        print("🔄 Setting milestone via GitHub REST API...")
-        headers = {
-            'Authorization': f'token {token}',
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-        }
-        url = f"https://api.github.com/repos/{repo_name}/issues/{pr_number}"
-        data = {'milestone': milestone_number}
-        
-        response = requests.patch(url, json=data, headers=headers)
-        
-        if response.status_code == 200:
-            print("✅ Milestone set successfully via REST API")
-            return True
-        else:
-            print(f"❌ REST API failed: {response.status_code}")
-            print(f"Response: {response.text}")
-            return False
-    except Exception as e:
-        print(f"❌ REST API exception: {e}")
-        return False
+import requests
 
 def set_milestone(pr, repo):
     base_branch = pr.base.ref
@@ -115,7 +90,6 @@ def set_milestone(pr, repo):
 
     print(f"🎯 Target milestone: {milestone_name}")
 
-    # Mevcut milestone'ları al
     milestones = list(repo.get_milestones(state="all"))
     target_milestone = None
 
@@ -124,7 +98,6 @@ def set_milestone(pr, repo):
             target_milestone = milestone
             break
 
-    # Milestone yoksa oluştur
     if not target_milestone:
         try:
             print(f"🆕 Creating new milestone: {milestone_name}")
@@ -133,27 +106,29 @@ def set_milestone(pr, repo):
             print(f"❌ Failed to create milestone {milestone_name}: {e}")
             return
 
-    # Debug bilgileri
-    print(f"🔍 Found milestone: {target_milestone.title} (ID: {target_milestone.number})")
-    
-    # Mevcut milestone kontrolü
-    if pr.milestone and pr.milestone.title == milestone_name:
-        print(f"ℹ️ Milestone {milestone_name} already set")
-        return
-    
-    print(f"📌 Setting milestone: {milestone_name}")
-    
-    # REST API ile milestone set et
-    success = set_milestone_via_api(target_milestone.number)
-    
-    if not success:
-        print("❌ All milestone setting methods failed")
+    try:
+        print(f"📌 Setting milestone: {milestone_name}")
+        print("🔄 Setting milestone via GitHub REST API...")
+
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github+json"
+        }
+        url = f"https://api.github.com/repos/{repo_name}/issues/{pr.number}"
+        response = requests.patch(url, headers=headers, json={"milestone": target_milestone.number})
+
+        if response.status_code == 200:
+            print("✅ Milestone set successfully via REST API")
+        else:
+            print(f"❌ Failed to set milestone via REST API: {response.status_code} {response.text}")
+
+    except Exception as e:
+        print(f"❌ Failed to set milestone {milestone_name}: {e}")
 
 def sync_labels(pr, repo):
     current_labels = {label.name for label in pr.get_labels()}
     repo_labels = {label.name for label in repo.get_labels()}
 
-    # Issue label'ları oluştur
     for label in EXPECTED_LABELS:
         if re.match(r"[A-Z]{2,4}-\d+", label):
             try:
@@ -166,14 +141,12 @@ def sync_labels(pr, repo):
                 else:
                     print(f"❌ Failed to create label {label}: {e}")
 
-    # Repo label'larını yeniden al
     repo_labels = {label.name for label in repo.get_labels()}
 
-    # Eklenecek label'lar
     to_add = EXPECTED_LABELS - current_labels
     to_add = [label for label in to_add if label in repo_labels]
 
-    print("📌 Will add labels:", list(to_add))
+    print("📌 Will add labels:", to_add)
     for label in to_add:
         try:
             print(f"➕ Adding label: {label}")
@@ -181,7 +154,6 @@ def sync_labels(pr, repo):
         except Exception as e:
             print(f"❌ Failed to add label {label}: {e}")
 
-    # Kaldırılacak sistem label'ları
     system_labels = {"IMPEX", "CACHE", "ITEMS", "conflict"}
     to_remove = current_labels.intersection(system_labels) - EXPECTED_LABELS
     for label in to_remove:
@@ -192,8 +164,6 @@ def sync_labels(pr, repo):
             print(f"⚠️ Failed to remove label {label}: {e}")
 
 def main():
-    print("🚀 Starting label checker script...")
-    
     g = Github(token)
     repo = g.get_repo(repo_name)
     pr = repo.get_pull(pr_number)
@@ -202,17 +172,10 @@ def main():
     print(f"📌 PR#{pr_number} is targeting base branch: {base_branch}")
 
     files = get_changed_files(base_branch)
-    print(f"📁 Found {len(files)} changed files")
-    
     check_label_conditions(files)
     extract_issue_keys(base_branch)
-    
-    print(f"🏷️ Expected labels: {list(EXPECTED_LABELS)}")
-    
     sync_labels(pr, repo)
     set_milestone(pr, repo)
-    
-    print("✅ Script completed successfully")
 
 if __name__ == "__main__":
     main()
