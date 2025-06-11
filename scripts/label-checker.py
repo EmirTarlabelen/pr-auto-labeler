@@ -69,8 +69,6 @@ def extract_issue_keys(base_branch):
 
     EXPECTED_LABELS.update(issue_keys)
 
-import requests
-
 def set_milestone(pr, repo):
     base_branch = pr.base.ref
     milestone_name = None
@@ -107,23 +105,16 @@ def set_milestone(pr, repo):
             return
 
     try:
-        print(f"📌 Setting milestone: {milestone_name}")
-        print("🔄 Setting milestone via GitHub REST API...")
-
-        headers = {
-            "Authorization": f"token {token}",
-            "Accept": "application/vnd.github+json"
-        }
-        url = f"https://api.github.com/repos/{repo_name}/issues/{pr.number}"
-        response = requests.patch(url, headers=headers, json={"milestone": target_milestone.number})
-
-        if response.status_code == 200:
-            print("✅ Milestone set successfully via REST API")
+        if pr.milestone and pr.milestone.title == milestone_name:
+            print(f"ℹ️ Milestone {milestone_name} already set")
         else:
-            print(f"❌ Failed to set milestone via REST API: {response.status_code} {response.text}")
-
+            print(f"📌 Setting milestone: {milestone_name}")
+            issue = repo.get_issue(pr.number)
+            issue.edit(milestone=target_milestone)  # ✅ Sadece burası değişti
     except Exception as e:
+        import traceback
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
+        traceback.print_exc()
 
 def sync_labels(pr, repo):
     current_labels = {label.name for label in pr.get_labels()}
