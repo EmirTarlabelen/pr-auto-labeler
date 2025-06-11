@@ -114,7 +114,7 @@ def set_milestone(pr, repo):
             print(f"ℹ️ Milestone {milestone_name} already set")
         else:
             print(f"📌 Setting milestone: {milestone_name}")
-            pr.set_milestone(target_milestone)
+            pr.edit(milestone=target_milestone.number)
     except Exception as e:
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
 
