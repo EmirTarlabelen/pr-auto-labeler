@@ -70,11 +70,9 @@ def extract_issue_keys(base_branch):
     EXPECTED_LABELS.update(issue_keys)
 
 def set_milestone(pr, repo):
-    """Hedef branch'a göre milestone set eder"""
     base_branch = pr.base.ref
     milestone_name = None
-    
-    # Branch pattern'lerine göre milestone belirleme
+
     if base_branch.startswith("development"):
         milestone_name = "sprint-dev"
     elif base_branch.startswith("feature/marketplace"):
@@ -83,23 +81,21 @@ def set_milestone(pr, repo):
         milestone_name = "cloud"
     elif base_branch.startswith("offline_kasa"):
         milestone_name = "offline-kasa"
-    
+
     if not milestone_name:
         print("ℹ️ No milestone pattern matched for this branch")
         return
-    
+
     print(f"🎯 Target milestone: {milestone_name}")
-    
-    # Mevcut milestone'ları kontrol et
+
     milestones = list(repo.get_milestones(state="all"))
     target_milestone = None
-    
+
     for milestone in milestones:
         if milestone.title == milestone_name:
             target_milestone = milestone
             break
-    
-    # Milestone yoksa oluştur
+
     if not target_milestone:
         try:
             print(f"🆕 Creating new milestone: {milestone_name}")
@@ -107,16 +103,18 @@ def set_milestone(pr, repo):
         except Exception as e:
             print(f"❌ Failed to create milestone {milestone_name}: {e}")
             return
-    
-    # PR'a milestone ata
+
     try:
         if pr.milestone and pr.milestone.title == milestone_name:
             print(f"ℹ️ Milestone {milestone_name} already set")
         else:
             print(f"📌 Setting milestone: {milestone_name}")
-            pr.edit(milestone=target_milestone)
+            issue = repo.get_issue(pr.number)
+            issue.edit(milestone=target_milestone)  # ✅ Sadece burası değişti
     except Exception as e:
+        import traceback
         print(f"❌ Failed to set milestone {milestone_name}: {e}")
+        traceback.print_exc()
 
 def sync_labels(pr, repo):
     current_labels = {label.name for label in pr.get_labels()}
