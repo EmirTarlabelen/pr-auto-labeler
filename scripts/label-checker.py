@@ -65,7 +65,7 @@ def extract_issue_keys(base_branch):
         capture_output=True, text=True
     )
     for msg in result.stdout.strip().splitlines():
-        issue_keys.update(re.findall(r"[A-Z]{2,4}-\d+", msg))
+        issue_keys.update(re.findall(r"[A-Z]{2,6}-\d+", msg))
 
     EXPECTED_LABELS.update(issue_keys)
 
