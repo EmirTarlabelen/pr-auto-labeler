@@ -121,7 +121,7 @@ def sync_labels(pr, repo):
     repo_labels = {label.name for label in repo.get_labels()}
 
     for label in EXPECTED_LABELS:
-        if re.match(r"[A-Z]{2,4}-\d+", label):
+        if re.match(r"[A-Z]{2,6}-\d+", label):
             try:
                 if label not in repo_labels:
                     print(f"🏷️ Creating missing issue label: {label}")
