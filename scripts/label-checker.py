@@ -57,8 +57,8 @@ def check_label_conditions(files):
 
 def extract_issue_keys(base_branch):
     issue_keys = set()
-    issue_keys.update(re.findall(r"[A-Z]{2,4}-\d+", branch))
-    issue_keys.update(re.findall(r"[A-Z]{2,4}-\d+", pr_title))
+    issue_keys.update(re.findall(r"[A-Z]{2,6}-\d+", branch))
+    issue_keys.update(re.findall(r"[A-Z]{2,6}-\d+", pr_title))
 
     result = subprocess.run(
         ["git", "log", f"origin/{base_branch}..HEAD", "--pretty=format:%s"],
